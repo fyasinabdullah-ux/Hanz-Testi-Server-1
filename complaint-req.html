@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Complaint Request - Hanz Testi Server 1</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #0f172a;
+            color: #f8fafc;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            background-color: #1e293b;
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+            max-width: 550px;
+            width: 100%;
+            border: 1px solid #334155;
+        }
+
+        h2 {
+            color: #ef4444;
+            text-align: center;
+            margin-bottom: 8px;
+        }
+
+        p.subtitle {
+            text-align: center;
+            color: #94a3b8;
+            font-size: 14px;
+            margin-bottom: 24px;
+        }
+
+        .form-group {
+            margin-bottom: 18px;
+        }
+
+        label {
+            display: block;
+            font-size: 14px;
+            margin-bottom: 6px;
+            color: #cbd5e1;
+        }
+
+        label span.required {
+            color: #ef4444;
+        }
+
+        label span.optional {
+            color: #64748b;
+            font-size: 12px;
+        }
+
+        input[type="text"],
+        input[type="tel"],
+        input[type="datetime-local"],
+        textarea {
+            width: 100%;
+            padding: 12px;
+            background-color: #0f172a;
+            border: 1px solid #334155;
+            border-radius: 8px;
+            color: white;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        input:focus, textarea:focus {
+            border-color: #38bdf8;
+        }
+
+        .error-msg {
+            color: #f87171;
+            font-size: 12px;
+            margin-top: 4px;
+            display: none;
+        }
+
+        button {
+            width: 100%;
+            padding: 14px;
+            background-color: #38bdf8;
+            color: #0f172a;
+            font-weight: bold;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background 0.3s, transform 0.2s;
+        }
+
+        button:hover {
+            background-color: #0284c7;
+            color: white;
+        }
+
+        .status-msg {
+            margin-top: 15px;
+            text-align: center;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h2>Form Complaint Request</h2>
+        <p class="subtitle">Isi formulir di bawah ini untuk mengajukan komplain.</p>
+
+        <!-- Menggunakan Formspree agar data otomatis terkirim langsung ke hanzsupport@gmail.com -->
+        <form id="complaintForm" action="https://formspree.io/f/hanzsupport@gmail.com" method="POST">
+            
+            <!-- Order Number -->
+            <div class="form-group">
+                <label for="orderNumber">Order Number <span class="required">*</span></label>
+                <input type="text" id="orderNumber" name="order_number" placeholder="Contoh: JBTH-RF-12345" required>
+                <div id="orderError" class="error-msg">Order Number harus diawali dengan <strong>JBTH-RF-</strong></div>
+            </div>
+
+            <!-- Kapan Pesanan Dikirim -->
+            <div class="form-group">
+                <label for="dispatchTime">Kapan Pesanan Dikirim (Tanggal, Jam, Detik) <span class="required">*</span></label>
+                <input type="datetime-local" id="dispatchTime" name="dispatch_time" step="1" required>
+            </div>
+
+            <!-- Atas Nama Siapa -->
+            <div class="form-group">
+                <label for="customerName">Atas Nama Siapa <span class="optional">(Opsional)</span></label>
+                <input type="text" id="customerName" name="customer_name" placeholder="Nama Anda">
+            </div>
+
+            <!-- Nomor HP -->
+            <div class="form-group">
+                <label for="phoneNumber">Nomor WhatsApp / HP <span class="required">*</span></label>
+                <input type="tel" id="phoneNumber" name="phone_number" placeholder="08xxxxxxxxxx" required>
+            </div>
+
+            <!-- Report Lain -->
+            <div class="form-group">
+                <label for="additionalReport">Report Lain Selain Ini <span class="optional">(Opsional)</span></label>
+                <textarea id="additionalReport" name="additional_report" rows="4" placeholder="Jelaskan detail kendala lainnya..."></textarea>
+            </div>
+
+            <button type="submit" id="submitBtn">Kirim Complaint</button>
+            <div id="status" class="status-msg"></div>
+        </form>
+    </div>
+
+    <script>
+        const form = document.getElementById('complaintForm');
+        const orderInput = document.getElementById('orderNumber');
+        const orderError = document.getElementById('orderError');
+        const statusMsg = document.getElementById('status');
+
+        form.addEventListener('submit', function(event) {
+            event.preventDefault(); // Cegah submit bawaan
+
+            const orderValue = orderInput.value.trim();
+
+            // Validasi Prefix Order Number: Harus diawali JBTH-RF-
+            if (!orderValue.startsWith("JBTH-RF-")) {
+                orderError.style.display = 'block';
+                orderInput.style.borderColor = '#ef4444';
+                return;
+            } else {
+                orderError.style.display = 'none';
+                orderInput.style.borderColor = '#334155';
+            }
+
+            // Kirim data via AJAX agar tidak perlu pindah halaman / buka aplikasi email
+            const formData = new FormData(form);
+            statusMsg.style.color = '#38bdf8';
+            statusMsg.innerText = "Mengirim complaint...";
+
+            fetch(form.action, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'Accept': 'application/json'
+                }
+            }).then(response => {
+                if (response.ok) {
+                    statusMsg.style.color = '#4ade80';
+                    statusMsg.innerText = "Complaint berhasil terkirim ke hanzsupport@gmail.com!";
+                    form.reset();
+                } else {
+                    statusMsg.style.color = '#f87171';
+                    statusMsg.innerText = "Terjadi kesalahan saat mengirim. Coba lagi.";
+                }
+            }).catch(error => {
+                statusMsg.style.color = '#f87171';
+                statusMsg.innerText = "Terjadi kesalahan koneksi.";
+            });
+        });
+    </script>
+
+</body>
+</html>
